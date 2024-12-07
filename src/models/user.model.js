@@ -1,3 +1,4 @@
+import { boolean } from "joi";
 import mongoose, { Schema } from "mongoose";
 
 const userSchema = new mongoose.Schema({
@@ -17,15 +18,27 @@ const userSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    refreshToken:{
+    refreshToken: {
         type: String,
         default: null,
-        trim:true
+        trim: true
     },
     blogs: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Blog'
-    }]
+    }],
+    isEmailVerified: {
+        type: Boolean,
+        default: false,
+    },
+    verifyCode: {
+        type: String,
+        default: null
+    },
+    verifyCodeExpires: {
+        type: Date,
+        default: null
+    }
 })
 
 export const User = mongoose.model('User', userSchema)

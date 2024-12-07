@@ -27,13 +27,12 @@ const create = async (req, res, next) => {
 
     console.log(data);
 
-    
+
     const userId = req.user._id;
 
     try {
         const newBlog = await Blog.create({
-            title: data.title,
-            desc: data.desc,
+            ...data,
             user: userId,
             photo: req.file ? req.file.path : null
         });
@@ -100,10 +99,14 @@ const updateBlog = async (req, res, next) => {
             });
 
         if (req.file) {
-            blog.photo = req.file.path; 
+            blog.photo = req.file.path;
         }
 
+        
+
         blog.title = data.title || blog.title;
+
+
         blog.desc = data.desc || blog.desc;
 
         await blog.save();
@@ -113,42 +116,6 @@ const updateBlog = async (req, res, next) => {
         next(err);
     }
 };
-
-// const updateBlog = async (req, res, next) => {
-//     const { id } = req.params;
-
-//     const data = await Joi.object({
-//         title: Joi.string().trim().min(3).max(50),
-//         desc: Joi.string().trim().min(10).max(1000),
-//     })
-//         .validateAsync(req.body, { abortEarly: false })
-//         .catch(err => {
-//             return res.status(400).json({
-//                 error: err.details.map(d => d.message),
-//             });
-//         });
-
-//     if (!data) return; // Validasyon başarısızsa işleme devam etme.
-
-//     try {
-//         const updatedBlog = await Blog.findByIdAndUpdate(
-//             id,
-//             {
-//                 ...data,
-//                 photo: req.file ? req.file.path : undefined, // Fotoğraf güncellenmek istenirse ekle
-//             },
-//             { new: true } // Güncellenmiş belgeyi döndür
-//         );
-
-//         if (!updatedBlog) {
-//             return res.status(404).json({ message: 'Blog bulunamadı.' });
-//         }
-
-//         res.status(200).json(updatedBlog);
-//     } catch (err) {
-//         next(err);
-//     }
-// };
 
 export const BlogController = () => ({
     create,

@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken'
 import { User } from '../models/user.model.js';
 import config from '../db/config.js';
 import nodeMailer from 'nodemailer'
+import crypto from 'crypto';
+
 
 const getAllUsers = async (req, res, next) => {
     try {
@@ -152,6 +154,46 @@ const getUserBlogs = async (req, res, next) => {
     }
 }
 
+// const transporter = nodeMailer.createTransport({
+//     service: "Gmail",
+//     host: "smtp.gmail.com",
+//     port: 465,
+//     secure: true,
+//     auth: {
+//         user: process.env.EMAIL,
+//         pass: process.env.EMAIL_PASSWORD
+//     }
+// });
+
+// const verifyEmail = async (req, res) => {
+//     const user = req.user
+//     const email = req.user.email;
+
+//     const mailOptions = {
+//         from: process.env.EMAIL,
+//         to: email,
+//         subject: 'Email Verification',
+//         html: `to verify your email address`
+//     };
+
+//     transporter.sendMail(mailOptions, (error, info) => {
+//         if (error) {
+//             console.error("Error sending email: ", error);
+//             return res.status(500).json({
+//                 message: error.message,
+//                 error,
+//             })
+//         } else {
+//             console.log("Email sent: ", info);
+//             return res.json({ message: "Check your email" })
+//         }
+//     });
+// }
+
+
+
+
+
 const transporter = nodeMailer.createTransport({
     service: "Gmail",
     host: "smtp.gmail.com",
@@ -164,29 +206,81 @@ const transporter = nodeMailer.createTransport({
 });
 
 const verifyEmail = async (req, res) => {
-    const user = req.user
-    const email = req.user.email;
+    const userId = req.user._id; 
 
-    const mailOptions = {
-        from: process.env.EMAIL,
-        to: email,
-        subject: 'Email Verification',
-        html: `to verify your email address`
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error("Error sending email: ", error);
-            return res.status(500).json({
-                message: error.message,
-                error,
-            })
-        } else {
-            console.log("Email sent: ", info);
-            return res.json({ message: "Check your email" })
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
         }
-    });
-}
+
+        const verifyCode = crypto.randomBytes(3).toString('hex').toUpperCase(); 
+        const expiresIn = Date.now() + 1 * 60 * 1000;
+
+        user.verifyCode = verifyCode;
+        user.verifyCodeExpires = expiresIn;
+        await user.save();
+
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: user.email,
+            subject: 'Email Verification',
+            html: `
+                <h3>Email Təsdiqi</h3>
+                <p>Hörmətli ${user.fullName},</p>
+                <p>Emailinizi təsdiqləmək üçün aşağıdakı kodu istifadə edin:</p>
+                <h2>${verifyCode}</h2>
+                <p>Bu kod 10 dəqiqə ərzində etibarlıdır.</p>
+            `
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error("Email göndərmə xətası: ", error);
+                return res.status(500).json({ message: "Failed to send email." });
+            }
+            console.log("Email sent: ", info.response);
+            return res.json({ message: "Email sent. Check your email." });
+        });
+
+    } catch (error) {
+        console.error("Error in sendVerifyCode function: ", error);
+        return res.status(500).json({ message: "There is a error" });
+    }
+};
+
+
+const checkVerifyCode = async (req, res) => {
+    const { code } = req.body;
+    const userId = req.user._id;
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (!user.verifyCode || user.verifyCodeExpires < Date.now()) {
+            return res.status(400).json({ message: "The code is not available or has expired." });
+        }
+
+        if (user.verifyCode !== code) {
+            return res.status(400).json({ message: "The code is incorrect" });
+        }
+
+        user.verifyCode = null;
+        user.verifyCodeExpires = null;
+        user.verifyEmail = true
+        await user.save();
+
+        return res.json({ message: "Code verified!" });
+
+    } catch (error) {
+        console.error("Error in checkVerifyCode function: ", error);
+        return res.status(500).json({ message: "There is a error" });
+    }
+};
+
 
 export const AuthController = () => ({
     login,
@@ -195,5 +289,8 @@ export const AuthController = () => ({
     myProfile,
     getAllUsers,
     getUserBlogs,
-    verifyEmail
+    verifyEmail,
+    checkVerifyCode
 })
+
+
