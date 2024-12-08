@@ -160,7 +160,7 @@ const resetPassword = async (req, res, next) => {
             });
         const { token, newPassword } = validData
 
-        if (!token || !newPassword) return res.status(400).json({ message: 'Token,newPassword and current password is required' })
+        if (!token || !newPassword) return res.status(400).json({ message: 'Token and newPassword is required' })
         const user = await User.findOne({
             resetPassToken: token,
         })
