@@ -1,4 +1,3 @@
-import { boolean } from "joi";
 import mongoose, { Schema } from "mongoose";
 
 const userSchema = new mongoose.Schema({
@@ -36,6 +35,14 @@ const userSchema = new mongoose.Schema({
         default: null
     },
     verifyCodeExpires: {
+        type: Date,
+        default: null
+    },
+    resetPassToken:{
+        type: String,
+        default: null
+    },
+    resetPassExpires:{
         type: Date,
         default: null
     }

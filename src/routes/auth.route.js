@@ -13,5 +13,9 @@ authRoute.post('/logout/:id', authorize, controller.logout)
 authRoute.get('/my-profile', authorize, controller.myProfile)
 authRoute.get('/get-all-user-blogs', authorize, controller.getUserBlogs)
 
-authRoute.post('/send-verify-code', authorize, controller.verifyEmail); 
+authRoute.post('/send-verify-code', authorize, controller.verifyEmail);
 authRoute.post('/verify-email', authorize, controller.checkVerifyCode);
+
+authRoute.post('/forget-pass', controller.forgetPassword)
+authRoute.post('/reset-pass', controller.resetPassword)
+authRoute.get('/verify', controller.verifyResetToken);
