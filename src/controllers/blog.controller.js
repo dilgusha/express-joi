@@ -5,8 +5,8 @@ import { User } from '../models/user.model.js';
 const getBlogsByUser = async (req, res, next) => {
     console.log(req.user);
     try {
-        const blogs = await Blog.find({ user: req.user._id }).populate('user', 'fullName email').select('title desc');
-        res.status(200).json(blogs);
+        const user = await User.findById(req.user._id).populate('blogs', 'title desc');
+        res.status(200).json(user.blogs);
     } catch (err) {
         next(err);
     }
@@ -37,9 +37,9 @@ const create = async (req, res, next) => {
             photo: req.file ? req.file.path : null
         });
 
-        await User.findByIdAndUpdate(userId, {
-            $push: { blogs: newBlog._id }
-        });
+        // await User.findByIdAndUpdate(userId, {
+        //     $push: { blogs: newBlog._id }
+        // });
 
         res.status(201).json(newBlog);
     } catch (err) {
@@ -63,9 +63,9 @@ const deleteBlog = async (req, res, next) => {
 
         await Blog.findByIdAndDelete(blogId);
 
-        await User.findByIdAndUpdate(req.user._id, {
-            $pull: { blogs: blogId }
-        });
+        // await User.findByIdAndUpdate(req.user._id, {
+        //     $pull: { blogs: blogId }
+        // });
 
         res.status(200).json({ message: 'Blog deleted' });
     } catch (err) {
@@ -98,15 +98,10 @@ const updateBlog = async (req, res, next) => {
                 });
             });
 
-        if (req.file) {
-            blog.photo = req.file.path;
-        }
-
+        if (req.file) blog.photo = req.file.path;
         
 
         blog.title = data.title || blog.title;
-
-
         blog.desc = data.desc || blog.desc;
 
         await blog.save();
